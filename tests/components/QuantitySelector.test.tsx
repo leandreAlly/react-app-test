@@ -19,55 +19,99 @@ describe('QuantitySelector', () => {
       </CartProvider>
     );
 
+    const getAddToCartButton = () =>
+      screen.queryByRole('button', { name: /add to cart/i });
+
+    const getQuantityControl = () => ({
+      quantity: screen.getByRole('status'),
+      decrementButton: screen.getByRole('button', { name: '-' }),
+      incrementButton: screen.getByRole('button', { name: '+' }),
+    });
+    const user = userEvent.setup();
+
+    const addToCart = async () => {
+      const button = getAddToCartButton();
+      await user.click(button!);
+    };
+
+    const incrementQuantity = async () => {
+      const { incrementButton } = getQuantityControl();
+      await user.click(incrementButton);
+    };
+    const decrementQuantity = async () => {
+      const { decrementButton } = getQuantityControl();
+      await user.click(decrementButton);
+    };
+
     return {
-      AddToCartButton: screen.getByRole('button', { name: /add to cart/i }),
-      getQuantity: () => screen.getByRole('status'),
-      getDecrementButton: () => screen.getByRole('button', { name: '-' }),
-      getIncrementButton: () => screen.getByRole('button', { name: '+' }),
-      user: userEvent.setup(),
+      getAddToCartButton,
+      getQuantityControl,
+      addToCart,
+      incrementQuantity,
+      decrementQuantity,
     };
   };
   it('render the Add to Cart Button', () => {
-    const { AddToCartButton } = renderComponent();
+    const { getAddToCartButton } = renderComponent();
 
-    expect(AddToCartButton).toBeInTheDocument();
+    expect(getAddToCartButton()).toBeInTheDocument();
   });
 
   it('should add product to the cart', async () => {
-    const {
-      AddToCartButton,
-      user,
-      getQuantity,
-      getDecrementButton,
-      getIncrementButton,
-    } = renderComponent();
+    const { getAddToCartButton, addToCart, getQuantityControl } =
+      renderComponent();
 
-    await user.click(AddToCartButton);
+    await addToCart();
 
-    expect(getQuantity()).toHaveTextContent('1');
-    expect(getDecrementButton()).toBeInTheDocument();
-    expect(getIncrementButton()).toBeInTheDocument();
+    const { quantity, decrementButton, incrementButton } = getQuantityControl();
+    expect(quantity).toHaveTextContent('1');
+    expect(decrementButton).toBeInTheDocument();
+    expect(incrementButton).toBeInTheDocument();
 
-    expect(AddToCartButton).not.toBeInTheDocument();
+    expect(getAddToCartButton()).not.toBeInTheDocument();
   });
 
   it('should increment the quantity of the product', async () => {
-    const { AddToCartButton, user, getQuantity, getIncrementButton } =
+    const { addToCart, getQuantityControl, incrementQuantity } =
       renderComponent();
-    await user.click(AddToCartButton);
+    await addToCart();
 
-    await user.click(getIncrementButton());
+    await incrementQuantity();
 
-    expect(getQuantity()).toHaveTextContent('2');
+    const { quantity } = getQuantityControl();
+    expect(quantity).toHaveTextContent('2');
   });
 
   it('should decrement the quantity of the product', async () => {
-    const { AddToCartButton, user, getQuantity, getDecrementButton } =
-      renderComponent();
-    await user.click(AddToCartButton);
+    const {
+      addToCart,
+      getQuantityControl,
+      incrementQuantity,
+      decrementQuantity,
+    } = renderComponent();
+    await addToCart();
+    await incrementQuantity();
 
-    await user.click(getDecrementButton());
+    await decrementQuantity();
 
-    // expect(getQuantity()).not.toHaveTextContent('2');
+    const { quantity } = getQuantityControl();
+    expect(quantity).toHaveTextContent('1');
+  });
+
+  it('should remove the product from the cart', async () => {
+    const {
+      getAddToCartButton,
+      decrementQuantity,
+      addToCart,
+      getQuantityControl,
+    } = renderComponent();
+    await addToCart();
+    const { incrementButton, decrementButton, quantity } = getQuantityControl();
+    await decrementQuantity();
+
+    expect(quantity).not.toBeInTheDocument();
+    expect(decrementButton).not.toBeInTheDocument();
+    expect(incrementButton).not.toBeInTheDocument();
+    expect(getAddToCartButton()).toBeInTheDocument();
   });
 });
