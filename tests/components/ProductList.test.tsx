@@ -3,11 +3,12 @@ import {
   screen,
   waitForElementToBeRemoved,
 } from '@testing-library/react';
+import { http, HttpResponse } from 'msw';
 import ProductList from '../../src/components/ProductList';
-import { server } from '../mocks/server';
-import { delay, http, HttpResponse } from 'msw';
-import { db } from '../mocks/db';
 import allProviders from '../allProviders';
+import { db } from '../mocks/db';
+import { server } from '../mocks/server';
+import { simulateDelay } from '../utils';
 
 const productIds: number[] = [];
 
@@ -45,11 +46,7 @@ describe('ProductList', () => {
     expect(await screen.findByText(/error/i)).toBeInTheDocument();
   });
   it('should render a loading indicator when fetching data', async () => {
-    server.use(
-      http.get('/product', async () => {
-        await delay(), HttpResponse.json([]);
-      })
-    );
+    simulateDelay('/products');
     render(<ProductList />, { wrapper: allProviders });
 
     expect(await screen.findByText(/loading/i)).toBeInTheDocument();
